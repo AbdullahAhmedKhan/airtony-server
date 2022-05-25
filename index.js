@@ -36,6 +36,20 @@ async function run() {
         await client.connect();
         const partsCollection = client.db("airtony").collection("parts");
         const placeOrderCollection = client.db("airtony").collection("placeOrder");
+        const userCollection = client.db('airtony').collection('users');
+        const reviewCollection = client.db('airtony').collection('reviews');
+
+
+        const verifyAdmin = async (req, res, next) => {
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                next();
+            }
+            else {
+                res.status(403).send({ message: 'forbidden' });
+            }
+        }
 
 
         // get all parts
@@ -53,6 +67,46 @@ async function run() {
             const part = await partsCollection.findOne(query);
             res.send(part);
         });
+
+        // reviews info
+        app.get('/review', async (req, res) => {
+            const query = {};
+            const reviews = await reviewCollection.find(query).toArray();
+            res.send(reviews);
+
+        })
+
+        // add a review | Post review
+        app.post("/review", async (req, res) => {
+            const review = req.body;
+            const result = await reviewCollection.insertOne(review);
+            res.send(result);
+        });
+
+
+
+        // users info 
+        app.get('/user', async (req, res) => {
+            const users = await userCollection.find().toArray();
+            res.send(users);
+        })
+        //admin role 
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+        // make a admin 
+        app.put('/user/admin/:email', verifyJWT, verifyAdmin, async (req, res) => {
+            const email = req.params.email;
+            const filter = { email: email };
+            const updateDoc = {
+                $set: { role: 'admin' },
+            };
+            const result = await userCollection.updateOne(filter, updateDoc);
+            res.send(result);
+        })
 
         // send database order info
         app.post("/placeorder", async (req, res) => {
