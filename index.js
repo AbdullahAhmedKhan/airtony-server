@@ -84,6 +84,19 @@ async function run() {
         });
 
         // add user in database
+        // app.put('/user/:email', async (req, res) => {
+        //     const email = req.params.email;
+        //     const user = req.body;
+        //     const filter = { email: email };
+        //     const options = { upsert: true };
+        //     const updateDoc = {
+        //         $set: user,
+        //     };
+        //     const result = await userCollection.updateOne(filter, updateDoc, options);
+        //     // const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
+        //     // res.send({ result, token });
+        //     res.send(result);
+        // })
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -93,9 +106,8 @@ async function run() {
                 $set: user,
             };
             const result = await userCollection.updateOne(filter, updateDoc, options);
-            // const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-            // res.send({ result, token });
-            res.send(result);
+            const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '30d' })
+            res.send({ result, token });
         })
 
         //single users info 
@@ -107,7 +119,7 @@ async function run() {
         })
 
         //all users info 
-        app.get('/user', async (req, res) => {
+        app.get('/user', verifyJWT, async (req, res) => {
             const users = await userCollection.find().toArray();
             res.send(users);
         })
@@ -137,7 +149,7 @@ async function run() {
         });
 
         // get single user order info
-        app.get('/placeorder', async (req, res) => {
+        app.get('/placeorder', verifyJWT, async (req, res) => {
             const customerEmail = req.query.email;
             const query = { customerEmail: customerEmail };
             const orders = await placeOrderCollection.find(query).toArray();
