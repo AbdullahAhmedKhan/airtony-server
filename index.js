@@ -38,6 +38,7 @@ async function run() {
         const placeOrderCollection = client.db("airtony").collection("placeOrder");
         const userCollection = client.db('airtony').collection('users');
         const reviewCollection = client.db('airtony').collection('reviews');
+        const paymentCollection = client.db('airtony').collection('payments');
 
 
         const verifyAdmin = async (req, res, next) => {
@@ -123,20 +124,6 @@ async function run() {
 
         })
 
-        // add user in database
-        // app.put('/user/:email', async (req, res) => {
-        //     const email = req.params.email;
-        //     const user = req.body;
-        //     const filter = { email: email };
-        //     const options = { upsert: true };
-        //     const updateDoc = {
-        //         $set: user,
-        //     };
-        //     const result = await userCollection.updateOne(filter, updateDoc, options);
-        //     // const token = jwt.sign({ email: email }, process.env.ACCESS_TOKEN_SECRET, { expiresIn: '1h' })
-        //     // res.send({ result, token });
-        //     res.send(result);
-        // })
         app.put('/user/:email', async (req, res) => {
             const email = req.params.email;
             const user = req.body;
@@ -196,13 +183,6 @@ async function run() {
             res.send(orders);
         })
 
-        // 
-        // app.delete('/doctor/:email', async (req, res) => {
-        //     const email = req.params.email;
-        //     const filter = { email: email };
-        //     const result = await doctorCollection.deleteOne(filter);
-        //     res.send(result);
-        // })
 
         //Product delete
         app.delete('/part/:id', async (req, res) => {
@@ -220,14 +200,48 @@ async function run() {
             res.send(result);
         })
 
+        //payment
+        app.get("/placeorder/:id", verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) };
+            const order = await placeOrderCollection.findOne(query);
+            res.send(order);
+        });
+
+        app.post("/create-payment-intent", verifyJWT, async (req, res) => {
+            const order = req.body;
+            const price = order.placePrice;
+            const amount = price * 100;
+            const paymentIntent = await stripe.paymentIntents.create({
+                amount: amount,
+                currency: "usd",
+                payment_method_types: ["card"],
+            });
+            res.send({ clientSecret: paymentIntent.client_secret });
+        });
+
+        app.patch("/placeorder/:id", verifyJWT, async (req, res) => {
+            const id = req.params.id;
+            const payment = req.body;
+            const filter = { _id: ObjectId(id) };
+            const updateDoc = {
+                $set: {
+                    paid: true,
+                    transactionId: payment.transactionId,
+                },
+            };
+
+            const updatedOrder = await placeOrderCollection.updateOne(filter, updateDoc);
+            const result = await paymentCollection.insertOne(payment);
+            res.send(updateDoc);
+        });
+
 
     }
 
     finally {
 
     }
-
-
 
 }
 
