@@ -91,7 +91,7 @@ async function run() {
         });
 
         //get all orders | admin
-        app.get('/products', async (req, res) => {
+        app.get('/orders', async (req, res) => {
             const query = {}
             const cursor = placeOrderCollection.find(query);
             const products = await cursor.toArray();
@@ -203,6 +203,14 @@ async function run() {
         //     const result = await doctorCollection.deleteOne(filter);
         //     res.send(result);
         // })
+
+        app.delete('/part/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await partsCollection.deleteOne(query)
+            res.send(result);
+        })
+
     }
 
     finally {
