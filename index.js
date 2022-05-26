@@ -83,6 +83,46 @@ async function run() {
             res.send(result);
         });
 
+        // add a product | Post product
+        app.post("/addproduct", async (req, res) => {
+            const product = req.body;
+            const result = await partsCollection.insertOne(product);
+            res.send(result);
+        });
+
+        //get all orders | admin
+        app.get('/products', async (req, res) => {
+            const query = {}
+            const cursor = placeOrderCollection.find(query);
+            const products = await cursor.toArray();
+            res.send(products)
+        });
+
+        app.get('/admin/:email', async (req, res) => {
+            const email = req.params.email;
+            const user = await userCollection.findOne({ email: email });
+            const isAdmin = user.role === 'admin';
+            res.send({ admin: isAdmin })
+        })
+
+        app.put('/user/admin/:email', verifyJWT, async (req, res) => {
+            const email = req.params.email;
+            const requester = req.decoded.email;
+            const requesterAccount = await userCollection.findOne({ email: requester });
+            if (requesterAccount.role === 'admin') {
+                const filter = { email: email };
+                const updateDoc = {
+                    $set: { role: 'admin' },
+                };
+                const result = await userCollection.updateOne(filter, updateDoc);
+                res.send(result);
+            }
+            else {
+                res.status(403).send({ message: 'forbidden access' })
+            }
+
+        })
+
         // add user in database
         // app.put('/user/:email', async (req, res) => {
         //     const email = req.params.email;
