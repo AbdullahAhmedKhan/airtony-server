@@ -204,12 +204,22 @@ async function run() {
         //     res.send(result);
         // })
 
+        //Product delete
         app.delete('/part/:id', async (req, res) => {
             const id = req.params.id;
             const query = { _id: ObjectId(id) }
             const result = await partsCollection.deleteOne(query)
             res.send(result);
         })
+
+        //Order shipped
+        app.delete('/order/:id', async (req, res) => {
+            const id = req.params.id;
+            const query = { _id: ObjectId(id) }
+            const result = await placeOrderCollection.deleteOne(query)
+            res.send(result);
+        })
+
 
     }
 
