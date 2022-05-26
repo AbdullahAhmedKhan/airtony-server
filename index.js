@@ -220,7 +220,7 @@ async function run() {
             });
             res.send({ clientSecret: paymentIntent.client_secret });
         });
-
+        //getting order
         app.patch("/placeorder/:id", verifyJWT, async (req, res) => {
             const id = req.params.id;
             const payment = req.body;
